@@ -68,17 +68,3 @@ type FunctionInfo(id: MethodInfo, expr:Expr) =
 [<AllowNullLiteral>]
 type KernelInfo(methodInfo: MethodInfo, expr:Expr) =
     inherit FunctionInfo(methodInfo, expr)
-    let mutable isEntryPoint = false
-    let mutable isEndPoint = false
-
-    member this.IsEntryPoint 
-        with get() =
-            isEntryPoint
-        and internal set(value) = 
-            isEntryPoint <- value
-
-    member this.IsEndPoint 
-        with get() =
-            isEndPoint
-        and internal set(value) = 
-            isEndPoint <- value
