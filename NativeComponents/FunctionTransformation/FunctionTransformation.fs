@@ -49,10 +49,9 @@ type FunctionTransformationStep(tm: TypeManager,
             this.FunctionInfo.Body <- p.Execute(this.FunctionInfo.Body, this) :?> Expr 
                                   
     override this.Run(km: KernelModule) =
-        for k in km.CallGraph.KernelIDs do
-            this.Process(km.CallGraph.GetKernel(k))
-        for f in km.CallGraph.FunctionIDs do
-            this.Process(km.CallGraph.GetFunction(f))
+        for f in km.Functions do
+            this.Process(f)
+        this.Process(km.Kernel)
         km
         
 

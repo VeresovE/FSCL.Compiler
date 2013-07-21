@@ -16,7 +16,7 @@ type CallGraphNode(content: FunctionInfo) =
     member val Functions = new Dictionary<MethodInfo, unit>() with get
             
 [<AllowNullLiteral>]
-type ModuleCallGraph() =
+type MCG() =
     member val internal functionStorage = new Dictionary<MethodInfo, CallGraphNode>()    
     member val internal kernelStorage = new Dictionary<MethodInfo, CallGraphNode>() 
             
@@ -154,7 +154,7 @@ type ModuleCallGraph() =
         else
             new ReadOnlyDictionary<MethodInfo, unit>(new Dictionary<MethodInfo, unit>())
 
-    member this.MergeWith(kcg: ModuleCallGraph) =
+    member this.MergeWith(kcg: MCG) =
         for k in kcg.KernelIDs do
             this.AddKernel(kcg.GetKernel(k))
         for f in kcg.FunctionIDs do

@@ -6,8 +6,7 @@ open System.Reflection
 open Microsoft.FSharp.Quotations
 open System
 
-[<StepProcessor("FSCL_FUNCTIONS_DISCOVERY_PROCESSOR", "FSCL_MODULE_PREPROCESSING_STEP",
-                Dependencies = [| "FSCL_GENERIC_INSTANTIATION_PROCESSOR" |])>] 
+[<StepProcessor("FSCL_FUNCTIONS_DISCOVERY_PROCESSOR", "FSCL_MODULE_PREPROCESSING_STEP")>] 
 type FunctionReferenceDiscover() =      
     inherit ModulePreprocessingProcessor()
 
@@ -37,11 +36,9 @@ type FunctionReferenceDiscover() =
         DiscoverFunctionRefInner(k.Body)
         foundFunctions
 
-    override this.Run(m, en) =
+    override this.Run(km, en) =
         let engine = en :?> ModulePreprocessingStep
-        for k in m.CallGraph.KernelIDs do
-            let found = DiscoverFunctionRef(m.CallGraph.GetKernel(k))
-            for item in found do
-                m.CallGraph.AddFunction(item.Value)
-                m.CallGraph.AddCall(k, item.Value.ID)
+        let found = DiscoverFunctionRef(km.Kernel)
+        for item in found do
+            km.Functions.Add(item.Value)
             

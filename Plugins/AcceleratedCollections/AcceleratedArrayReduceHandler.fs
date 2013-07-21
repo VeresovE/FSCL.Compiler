@@ -141,8 +141,7 @@ type AcceleratedArrayReduceHandler() =
         String.concat "_" ([prefix] @ (List.map (fun (t:Type) -> t.Name.Replace(".", "")) parameterTypes) @ [utilityFunction])
 
     interface IAcceleratedCollectionHandler with
-        member this.Process(methodInfo, args, root, step) =            
-            let kcg = new ModuleCallGraph()
+        member this.Process(methodInfo, args, root, step) =   
             (*
                 Array map looks like: Array.map fun collection
                 At first we check if fun is a lambda (first argument)
@@ -162,14 +161,6 @@ type AcceleratedArrayReduceHandler() =
                                 (mi, body)
                             | _ ->
                                 failwith ("Cannot parse the body of the computation function " + mi.Name))
-            // Merge with the eventual subkernel
-            let subkernel =
-                try
-                    step.Process(args.[1])
-                with
-                    :? CompilerException -> null
-            if subkernel <> null then
-                kcg.MergeWith(subkernel.Source)
                 
             // Extract the reduce function 
             match computationFunction with
@@ -222,27 +213,9 @@ type AcceleratedArrayReduceHandler() =
                     
                 // Setup kernel module and return  
                 let signature = moduleBuilder.GetMethod(methodBuilder.Name) 
-                kcg.AddKernel(new KernelInfo(signature, newBody))
-                    
-                let endpoints = kcg.EndPoints
-                // Add current kernel
-                kcg.AddKernel(new KernelInfo(signature, body)) 
-                // Add the computation function and connect it to the kernel
-                kcg.AddFunction(new FunctionInfo(functionInfo, body))
-                kcg.AddCall(signature, functionInfo)
-                // Connect with subkernel
-                if subkernel <> null then   
-                    let retTypes =
-                        if FSharpType.IsTuple(subkernel.Source.EndPoints.[0].ReturnType) then
-                            FSharpType.GetTupleElements(subkernel.Source.EndPoints.[0].ReturnType)
-                        else
-                            [| subkernel.Source.EndPoints.[0].ReturnType |]
-                    for i = 0 to retTypes.Length - 1 do                     
-                        kcg.AddConnection(
-                            endpoints.[0], 
-                            signature, 
-                            ReturnValue(i), ParameterIndex(i)) 
-                // Return module                             
-                Some(new KernelModule(kcg))
+
+                let km = new KernelModule(signature, newBody)
+                km.Functions.Add(new FunctionInfo(functionInfo, body))
+                Some(km)
             | _ ->
                 None

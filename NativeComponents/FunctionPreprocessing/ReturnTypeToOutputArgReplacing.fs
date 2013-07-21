@@ -48,12 +48,7 @@ type ReturnTypeToOutputArgProcessor() =
             
             // Add kernel parameter table to the global data
             kernelInfo.Signature <- newSignature     
-
-            // Change connections bound to the return types of this kernel
-            // NB: this modifies the call graph
-            for i = 0 to returnedVars.Length - 1 do
-                step.ChangeOutConnection(ReturnValue(i), ParameterIndex(originalParamsCount + i))
-
+            
        
     member private this.FindReturnedArraysAllocationExpression(expr:Expr, step:FunctionPreprocessingStep, kernel:FunctionInfo) =
         match expr with

@@ -16,7 +16,6 @@ type AcceleratedArrayMapHandler() =
     interface IAcceleratedCollectionHandler with
         member this.Process(methodInfo, args, root, step) =
                 
-            let kcg = new ModuleCallGraph()
             (*
                 Array map looks like: Array.map fun collection
                 At first we check if fun is a lambda (first argument)
@@ -36,15 +35,7 @@ type AcceleratedArrayMapHandler() =
                                 (mi, body)
                             | _ ->
                                 failwith ("Cannot parse the body of the computation function " + mi.Name))
-            // Merge with the eventual subkernel
-            let subkernel =
-                try
-                    step.Process(args.[1])
-                with
-                    :? CompilerException -> null
-            if subkernel <> null then
-                kcg.MergeWith(subkernel.Source)
-                
+                          
             // Extract the map function 
             match computationFunction with
             | Some(functionInfo, body) ->
@@ -70,7 +61,7 @@ type AcceleratedArrayMapHandler() =
                 let globalIdVar = Quotations.Var("global_id", typeof<int>)
                 let getElementMethodInfo, _ = AcceleratedCollectionUtil.GetArrayAccessMethodInfo(inputArrayType.GetElementType())
                 let _, setElementMethodInfo = AcceleratedCollectionUtil.GetArrayAccessMethodInfo(outputArrayType.GetElementType())
-                let body = 
+                let kb = 
                     Expr.Let(globalIdVar,
                                 Expr.Call(AcceleratedCollectionUtil.FilterCall(<@ get_global_id @>, fun(e, mi, a) -> mi).Value, [ Expr.Value(0) ]),
                                 Expr.Call(setElementMethodInfo,
@@ -84,25 +75,11 @@ type AcceleratedArrayMapHandler() =
                                                     ])
                                         ]))
 
-                let endpoints = kcg.EndPoints
                 // Add current kernel
-                kcg.AddKernel(new KernelInfo(signature, body)) 
-                // Add the computation function and connect it to the kernel
-                kcg.AddFunction(new FunctionInfo(functionInfo, body))
-                kcg.AddCall(signature, functionInfo)
-                // Connect with subkernel
-                if subkernel <> null then   
-                    let retTypes =
-                        if FSharpType.IsTuple(subkernel.Source.EndPoints.[0].ReturnType) then
-                            FSharpType.GetTupleElements(subkernel.Source.EndPoints.[0].ReturnType)
-                        else
-                            [| subkernel.Source.EndPoints.[0].ReturnType |]
-                    for i = 0 to retTypes.Length - 1 do                     
-                        kcg.AddConnection(
-                            endpoints.[0], 
-                            signature, 
-                            ReturnValue(i), ParameterIndex(i)) 
+                let cf = new FunctionInfo(functionInfo, body)
+                let km = new KernelModule(signature, kb)
+                km.Functions.Add(cf)
                 // Return module                             
-                Some(new KernelModule(kcg))
+                Some(km)
             | _ ->
                 None

@@ -29,7 +29,7 @@ let main argv =
     result <- compiler.Compile(<@ Array.reduce(fun x y -> x * y) @>)
 
     //#3: composition or reduce and map (thanks to the kernel composition capabilities of the FSCL compiler)
-    let a = Array.zeroCreate<float32> 128
-    result <- compiler.Compile(<@ Array.reduce reduce (Array.map (fun el -> el + 1.0f) a) @>)
+    //let a = Array.zeroCreate<float32> 128
+    //result <- compiler.Compile(<@ Array.reduce reduce (Array.map (fun el -> el + 1.0f) a) @>)
 
     0 // return an integer exit code
