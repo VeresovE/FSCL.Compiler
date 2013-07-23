@@ -40,6 +40,7 @@ type KernelParameterInfo(parameterInfo:ParameterInfo) =
     ///</summary>
     ///
     member val Info = parameterInfo with get, set 
+    member val IsReturnParameter = false with get, set
     ///
     ///<summary>
     /// The set of additional parameters generated to access this parameter
